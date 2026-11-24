@@ -17,19 +17,22 @@ LINE = (
 )
 
 
+def validate(line: str) -> str | None:
+    """Return an error message if line breaks the competition gate."""
+    if "\n" in line or "\r" in line:
+        return "entry must be a single line"
+    if not 1 <= len(line) <= 200:
+        return f"entry must be 1-200 characters, got {len(line)}"
+    if not line.strip():
+        return "entry must not be only whitespace"
+    return None
+
+
 def main() -> int:
     # Validate the line against the competition gate before writing.
-    if "\n" in LINE or "\r" in LINE:
-        print("error: entry must be a single line", file=sys.stderr)
-        return 1
-    if not 1 <= len(LINE) <= 200:
-        print(
-            f"error: entry must be 1-200 characters, got {len(LINE)}",
-            file=sys.stderr,
-        )
-        return 1
-    if not LINE.strip():
-        print("error: entry must not be only whitespace", file=sys.stderr)
+    error = validate(LINE)
+    if error is not None:
+        print(f"error: {error}", file=sys.stderr)
         return 1
 
     output_dir = os.environ.get("MAKEFUN_OUTPUT_DIR") or "/output"
@@ -39,10 +42,11 @@ def main() -> int:
     with open(path, "w", encoding="utf-8", newline="") as f:
         f.write(LINE)
 
-    # Read back and verify the file holds exactly the validated line.
+    # Read back and verify the file holds exactly the validated line,
+    # and that what was written still passes the gate.
     with open(path, "r", encoding="utf-8", newline="") as f:
         written = f.read()
-    if written != LINE:
+    if written != LINE or validate(written) is not None:
         print("error: read-back verification failed", file=sys.stderr)
         return 1
 
